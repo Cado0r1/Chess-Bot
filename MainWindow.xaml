@@ -1,0 +1,47 @@
+﻿<Window x:Class="ChessEngine.WindowsUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Chess Engine" SizeToContent="Width">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        
+        <StackPanel Grid.Column="0" Margin="10">
+            <TextBlock Text="Select Board Layout:" Margin="0,0,0,10"/>
+            <ComboBox x:Name="FenComboBox" SelectionChanged="FenComboBox_SelectionChanged">
+                <ComboBoxItem Content="Standard Position" Tag="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"/>
+                <ComboBoxItem Content="Scillian Defence" Tag="rnbqkbnr/pp2pppp/3p4/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 4"/>
+                <ComboBoxItem Content="Caro-Kann Defence" Tag="rnbqkbnr/pp2pppp/2p5/8/3Pp3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4"/>
+            </ComboBox>
+        </StackPanel>
+        
+        <Viewbox Grid.Column="1">
+            <Border BorderBrush="Black" BorderThickness="1">
+                <Grid x:Name="Chessboard" Width="800" Height="800">
+                </Grid>
+            </Border>
+        </Viewbox>
+    </Grid>
+    
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="Red"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+</Window>
