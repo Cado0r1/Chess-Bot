@@ -523,7 +523,8 @@ namespace ChessEngine.Game
         }
 
         public static ulong GenerateKingMoves(ulong square, bool IsWhite, bool CheckAttack){
-            // Check if move is attacked after move is made then disallow/ allow if conditions correct, this will reduce computing time and will also fix the issue that the pieces bitboards includes the outdated king move in the check causing move gen issues
+            ulong moves = 0;
+            ulong TeamPieces = IsWhite ? GetWhitePieces() : GetBlackPieces();
             if(CheckAttack)
             {
                 if(IsAttacked(square,IsWhite))
@@ -532,8 +533,6 @@ namespace ChessEngine.Game
                 }
                 return 0xffffffffffffffff;
             }
-            ulong moves = 0;
-            ulong TeamPieces = IsWhite ? GetWhitePieces() : GetBlackPieces();
             if ((square & NorthWall) == 0){
                 moves = moves | (square << 9) | (square << 8) | (square << 7);
             }
@@ -548,7 +547,7 @@ namespace ChessEngine.Game
             if ((square & WestWall) == 0){
                 moves = moves | (square >> 1);
             }
-            return moves;
+            return moves ^ TeamPieces;
         }
     }
 }
