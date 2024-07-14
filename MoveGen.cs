@@ -58,27 +58,27 @@ namespace ChessEngine.Game
             return GetBlackPieces() | GetWhitePieces();
         }
 
-        public static ulong SortMove(ulong square, int Position)
+        public static Tuple<ulong, bool> SortMove(ulong square, bool CheckAttack)
         {
             if ((square & GetWhitePieces()) != 0 )
             {
-                if((square & WhitePawns) != 0) return GeneratePawnMoves(square, true, false);
-                if((square & WhiteRooks) != 0) return GenerateRookMoves(square, true);
-                if((square & WhiteKnights) != 0) return GenerateKnightMoves(square, true);
-                if((square & WhiteBishops) != 0) return GenerateBishopMoves(square, true);
-                if((square & WhiteQueen) != 0) return GenerateQueenMoves(square, true);
-                if((square & WhiteKing) != 0) return GenerateKingMoves(square, true);
-                return 0;
+                if((square & WhiteKing) != 0) return Tuple.Create(GenerateKingMoves(square, true, CheckAttack),true);
+                if((square & WhitePawns) != 0) return Tuple.Create(GeneratePawnMoves(square, true, false),false);
+                if((square & WhiteRooks) != 0) return Tuple.Create(GenerateRookMoves(square, true),false);
+                if((square & WhiteKnights) != 0) return Tuple.Create(GenerateKnightMoves(square, true),false);
+                if((square & WhiteBishops) != 0) return Tuple.Create(GenerateBishopMoves(square, true),false);
+                if((square & WhiteQueen) != 0) return Tuple.Create(GenerateQueenMoves(square, true),false);
+                return Tuple.Create(0UL,false);
             }
             else
             {
-                if((square & BlackPawns) != 0) return GeneratePawnMoves(square, false, false);
-                if((square & BlackRooks) != 0) return GenerateRookMoves(square, false);
-                if((square & BlackKnights) != 0) return GenerateKnightMoves(square, false);
-                if((square & BlackBishops) != 0) return GenerateBishopMoves(square, false);
-                if((square & BlackQueen) != 0) return GenerateQueenMoves(square, false);
-                if((square & BlackKing) != 0) return GenerateKingMoves(square, false);
-                return 0;
+                if((square & BlackKing) != 0) return Tuple.Create(GenerateKingMoves(square, false, CheckAttack),true);
+                if((square & BlackPawns) != 0) return Tuple.Create(GeneratePawnMoves(square, false, false),false);
+                if((square & BlackRooks) != 0) return Tuple.Create(GenerateRookMoves(square, false),false);
+                if((square & BlackKnights) != 0) return Tuple.Create(GenerateKnightMoves(square, false),false);
+                if((square & BlackBishops) != 0) return Tuple.Create(GenerateBishopMoves(square, false),false);
+                if((square & BlackQueen) != 0) return Tuple.Create(GenerateQueenMoves(square, false),false);
+                return Tuple.Create(0UL,false);
             }
         }
 
@@ -513,7 +513,7 @@ namespace ChessEngine.Game
                 return true;
             }
 
-            ulong KingMoves = GetKingMoves(square, IsWhite);
+            ulong KingMoves = GenerateKingMoves(square, IsWhite, false);
             if ( IsWhite ? (KingMoves & BlackKing) != 0 : (PawnMoves & WhiteKing) != 0)
             {
                 return true;
@@ -522,58 +522,31 @@ namespace ChessEngine.Game
             return false;
         }
 
-        public static ulong GetKingMoves(ulong square, bool IsWhite)
-        {
-            return (square << 9) | (square << 8) | (square << 7) | (square << 1) | (square >> 9) | (square >> 8) | (square >> 7) | (square >> 1);
-        }
-
-        public static ulong GenerateKingMoves(ulong square, bool IsWhite){
+        public static ulong GenerateKingMoves(ulong square, bool IsWhite, bool CheckAttack){
             // Check if move is attacked after move is made then disallow/ allow if conditions correct, this will reduce computing time and will also fix the issue that the pieces bitboards includes the outdated king move in the check causing move gen issues
+            if(CheckAttack)
+            {
+                if(IsAttacked(square,IsWhite))
+                {
+                    return 0;
+                }
+                return 0xffffffffffffffff;
+            }
             ulong moves = 0;
             ulong TeamPieces = IsWhite ? GetWhitePieces() : GetBlackPieces();
             if ((square & NorthWall) == 0){
-            if (((square << 9) & TeamPieces) == 0 && !IsAttacked(square << 9, IsWhite))
-            {
-                moves = moves | (square << 9);
-            }
-
-            if (((square << 8) & TeamPieces) == 0 && !IsAttacked(square << 8, IsWhite))
-            {
-                moves = moves | (square << 8);
-            }
-
-            if (((square << 7) & TeamPieces) == 0 && !IsAttacked(square << 7, IsWhite))
-            {
-                moves = moves | (square << 7);
-            }
+                moves = moves | (square << 9) | (square << 8) | (square << 7);
             }
             if ((square & EastWall) == 0){
-            if (((square << 1) & TeamPieces) == 0 && !IsAttacked(square << 1, IsWhite))
-            {
+            
                 moves = moves | (square << 1);
-            }
+            
             }
             if ((square & SouthWall) == 0){
-            if (((square >> 9) & TeamPieces) == 0 && !IsAttacked(square >> 9, IsWhite))
-            {
-                moves = moves | (square >> 9);
-            }
-
-            if (((square >> 8) & TeamPieces) == 0 && !IsAttacked(square >> 8, IsWhite))
-            {
-                moves = moves | (square >> 8);
-            }
-
-            if (((square >> 7) & TeamPieces) == 0 && !IsAttacked(square >> 7, IsWhite))
-            {
-                moves = moves | (square >> 7);
-            }
+                moves = moves | (square >> 9) | (square >> 8) | (square >> 7);
             }
             if ((square & WestWall) == 0){
-            if (((square >> 1) & TeamPieces) == 0 && !IsAttacked(square >> 1, IsWhite))
-            {
                 moves = moves | (square >> 1);
-            }
             }
             return moves;
         }

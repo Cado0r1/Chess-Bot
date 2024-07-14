@@ -46,8 +46,20 @@ namespace ChessEngine.Game
         {   
             From = IndexFlipper(From);
             To = IndexFlipper(To);
-            ulong Move = Moves.SortMove(IntToBitboard(From), From);
-            if((Move & IntToBitboard(To)) != 0)
+            Tuple<ulong,bool> Move = Moves.SortMove(IntToBitboard(From), false);
+            if(Move.Item2 == true)
+            {
+               if((Move.Item1 & IntToBitboard(To)) != 0)
+                {
+                    Moves.UpdateBitboard(IntToBitboard(From), IntToBitboard(To));
+                    if(Moves.SortMove(IntToBitboard(To), true).Item1 == 0){
+                        Moves.UpdateBitboard(IntToBitboard(To), IntToBitboard(From));
+                        return false;
+                    }
+                    return true;
+                } 
+            }
+            if((Move.Item1 & IntToBitboard(To)) != 0)
             {
                 Moves.UpdateBitboard(IntToBitboard(From), IntToBitboard(To));
                 return true;
