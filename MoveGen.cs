@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Windows.Controls;
 using System.Windows.Navigation;
 using System.Windows.Xps.Serialization;
+using System.Linq;
 
 namespace ChessEngine.Game
 {
@@ -11,18 +12,7 @@ namespace ChessEngine.Game
 
         public static ChessGame Board = new ChessGame();
 
-        public static ulong WhitePawns = 0x000000000000FF00;
-        public static ulong BlackPawns = 0x00FF000000000000;
-        public static ulong WhiteBishops=0x0000000000000024;
-        public static ulong BlackBishops=0x2400000000000000;
-        public static ulong WhiteKnights=0x0000000000000042;
-        public static ulong BlackKnights=0x4200000000000000;
-        public static ulong WhiteRooks = 0x0000000000000081;
-        public static ulong BlackRooks = 0x8100000000000000;
-        public static ulong WhiteKing =  0x0000000000000010;
-        public static ulong BlackKing =  0x1000000000000000;
-        public static ulong WhiteQueen  =0x0000000000000008;
-        public static ulong BlackQueen  =0x0800000000000000;
+        public static ulong WhitePawns,BlackPawns,WhiteBishops,BlackBishops,WhiteKnights,BlackKnights,WhiteRooks,BlackRooks,WhiteKing,BlackKing,WhiteQueen,BlackQueen;
         public static ulong SouthWall =  0x00000000000000FF;
         public static ulong NorthWall =  0xFF00000000000000;
         public static ulong EastWall =   0x8080808080808080;
@@ -40,8 +30,100 @@ namespace ChessEngine.Game
         public static ulong FileF =      0x2020202020202020;
         public static ulong FileG =      0x4040404040404040;
         
+        public static void SortBitboards(string fen)
+        {
+            if(fen.IndexOf(' ') != -1)
+            {
+                fen = fen.Substring(0, fen.IndexOf(' '));
+            }
+            Console.WriteLine(fen);
+            for(int i = 0; i < fen.Length; i++)
+            {
+                char piece;
+                if(fen[i] != '1'){
+                    piece = fen[i];
+                    int position = i -63;
+                    if(position < 0) position = -position;
+                    position = Board.IndexFlipper(position);
+                    switch (piece)
+                    {
+                        case 'r':  
+                            BlackRooks |= (ulong)1 << position;
+                            break;
+                        case 'n':  
+                            BlackKnights |= (ulong)1 << position;
+                            break;
+                        case 'b':  
+                            BlackBishops |= (ulong)1 << position;
+                            break;
+                        case 'q':  
+                            BlackQueen |= (ulong)1 << position;
+                            break;
+                        case 'k':  
+                            BlackKing |= (ulong)1 << position;
+                            break;
+                        case 'p':  
+                            BlackPawns |= (ulong)1 << position;
+                            break;
+                        case 'R':  
+                            WhiteRooks |= (ulong)1 << position;
+                            break;
+                        case 'N':  
+                            WhiteKnights |= (ulong)1 << position;
+                            break;
+                        case 'B':  
+                            WhiteBishops |= (ulong)1 << position;
+                            break;
+                        case 'Q':  
+                            WhiteQueen |= (ulong)1 << position;
+                            break;
+                        case 'K':  
+                            WhiteKing |= (ulong)1 << position;
+                            break;
+                        case 'P':  
+                            WhitePawns |= (ulong)1 << position;
+                            break;
+                        default:  
+                            Console.WriteLine("Invalid piece type");
+                            break;
+                    }
+                }
+            }
+        }
 
+        public static void PrintAll()
+        {
+            Board.PrintBitBoard(WhitePawns, "White Pawns");
+            Board.PrintBitBoard(WhiteKnights, "White Knights");
+            Board.PrintBitBoard(WhiteBishops, "White Bishops");
+            Board.PrintBitBoard(WhiteRooks, "White Rooks");
+            Board.PrintBitBoard(WhiteQueen, "White Queen");
+            Board.PrintBitBoard(WhiteKing, "White King");
 
+            Board.PrintBitBoard(BlackPawns, "Black Pawns");
+            Board.PrintBitBoard(BlackKnights, "Black Knights");
+            Board.PrintBitBoard(BlackBishops, "Black Bishops");
+            Board.PrintBitBoard(BlackRooks, "Black Rooks");
+            Board.PrintBitBoard(BlackQueen, "Black Queen");
+            Board.PrintBitBoard(BlackKing, "Black King");
+        }
+
+        public static void resetBitboards()
+        {
+            WhitePawns = 0UL;
+            WhiteKnights = 0UL;
+            WhiteBishops = 0UL;
+            WhiteRooks = 0UL;
+            WhiteQueen = 0UL;
+            WhiteKing = 0UL;
+        
+            BlackPawns = 0UL;
+            BlackKnights = 0UL;
+            BlackBishops = 0UL;
+            BlackRooks = 0UL;
+            BlackQueen = 0UL;
+            BlackKing = 0UL;
+        }
 
         public static ulong GetWhitePieces()
         {
@@ -132,23 +214,23 @@ namespace ChessEngine.Game
             ulong SinglePawnPush = isWhite ? square << 8 : square >> 8;
             if ((SinglePawnPush & GetAllPieces()) == 0)
             {
-                moves = moves | SinglePawnPush;
+                moves |= SinglePawnPush;
             }
             ulong DoublePawnPush = isWhite ? square << 16 : square >> 16;
             if (((SinglePawnPush | DoublePawnPush) & GetAllPieces()) == 0 && (isWhite ? (square & 0x000000000000FF00UL) != 0 : (square & 0x00FF000000000000UL) != 0))
             {
-                moves = moves | DoublePawnPush;
+                moves |= DoublePawnPush;
             }
 
             ulong LeftTake = isWhite ? square << 9 : square >> 7;
             if ((LeftTake & (isWhite ? GetBlackPieces() : GetWhitePieces())) != 0 && (square & 0x8080808080808080UL) == 0)
             {
-                moves = moves | LeftTake;
+                moves |= LeftTake;
             }
             ulong RightTake = isWhite ? square << 7 : square >> 9;
             if ((RightTake & (isWhite ? GetBlackPieces() : GetWhitePieces())) != 0 && (square & 0x0101010101010101UL) == 0)
             {
-                moves = moves | RightTake;
+                moves |= RightTake;
             }
             if (OnlyReturnAttack)
             {
@@ -176,13 +258,13 @@ namespace ChessEngine.Game
                 {
                     if ((North & OpposingPieces) != 0 || (North & NorthWall) != 0)
                     {
-                        moves = moves | North;
+                        moves |= North;
                         return moves;
                     }
                     else
                     {
-                        moves = moves | North;
-                        North = North << 8;
+                        moves |= North;
+                        North <<= 8;
                     }
                 }
                 else
@@ -207,13 +289,13 @@ namespace ChessEngine.Game
                 {
                     if ((East & OpposingPieces) != 0 || (East & EastWall) != 0)
                     {
-                        moves = moves | East;
+                        moves |= East;
                         return moves;
                     }
                     else
                     {
-                        moves = moves | East;
-                        East = East << 1;
+                        moves |= East;
+                        East <<= 1;
                     }
                 }
                 else
@@ -238,13 +320,13 @@ namespace ChessEngine.Game
                 {
                     if ((West & OpposingPieces) != 0 || (West & WestWall) != 0)
                     {
-                        moves = moves | West;
+                        moves |= West;
                         return moves;
                     }
                     else
                     {
-                        moves = moves | West;
-                        West = West >> 1;
+                        moves |= West;
+                        West >>= 1;
                     }
                 }
                 else
@@ -269,13 +351,13 @@ namespace ChessEngine.Game
                 {
                     if ((South & OpposingPieces) != 0 || (South & SouthWall) != 0)
                     {
-                        moves = moves | South;
+                        moves |= South;
                         return moves;
                     }
                     else
                     {
-                        moves = moves | South;
-                        South = South >> 8;
+                        moves |= South;
+                        South >>= 8;
                     }
                 }
                 else
@@ -300,13 +382,13 @@ namespace ChessEngine.Game
                 {
                     if ((NorthWest & OpposingPieces) != 0 || (NorthWest & (NorthWall | WestWall)) != 0)
                     {
-                        moves = moves | NorthWest;
+                        moves |= NorthWest;
                         return moves;
                     }
                     else
                     {
-                        moves = moves | NorthWest;
-                        NorthWest = NorthWest << 7;
+                        moves |= NorthWest;
+                        NorthWest <<= 7;
                     }
                 }
                 else
@@ -332,13 +414,13 @@ namespace ChessEngine.Game
                 {
                     if ((NorthEast & OpposingPieces) != 0 || (NorthEast & (NorthWall | EastWall)) != 0)
                     {
-                        moves = moves | NorthEast;
+                        moves |= NorthEast;
                         return moves;
                     }
                     else
                     {
-                        moves = moves | NorthEast;
-                        NorthEast = NorthEast << 9;
+                        moves |= NorthEast;
+                        NorthEast <<= 9;
                     }
                 }
                 else
@@ -364,13 +446,13 @@ namespace ChessEngine.Game
                 {
                     if ((SouthWest & OpposingPieces) != 0 || (SouthWest & (SouthWall | WestWall)) != 0)
                     {
-                        moves = moves | SouthWest;
+                        moves |= SouthWest;
                         return moves;
                     }
                     else
                     {
-                        moves = moves | SouthWest;
-                        SouthWest = SouthWest >> 9;
+                        moves |= SouthWest;
+                        SouthWest >>= 9;
                     }
                 }
                 else
@@ -396,13 +478,13 @@ namespace ChessEngine.Game
                 {
                     if ((SouthEast & OpposingPieces) != 0 || (SouthEast & (SouthWall | EastWall)) != 0)
                     {
-                        moves = moves | SouthEast;
+                        moves |= SouthEast;
                         return moves;
                     }
                     else
                     {
-                        moves = moves | SouthEast;
-                        SouthEast = SouthEast >> 7;
+                        moves |= SouthEast;
+                        SouthEast >>= 7;
                     }
                 }
                 else
@@ -446,35 +528,35 @@ namespace ChessEngine.Game
             ulong TeamPieces = IsWhite ? GetWhitePieces() : GetBlackPieces();
             if ((square & (EastWall | Rank7 | NorthWall)) == 0 && ((square << 17) & TeamPieces) == 0)
             {
-                moves = moves | (square << 17);
+                moves |= square << 17;
             }
             if ((square & (EastWall | NorthWall | FileG)) == 0 && ((square << 10) & TeamPieces) == 0)
             {
-                moves = moves | (square << 10);
+                moves |= square << 10;
             }
             if ((square & (WestWall | NorthWall | FileB)) == 0 && ((square << 6) & TeamPieces) == 0)
             {
-                moves = moves | (square << 6);
+                moves |= square << 6;
             }
             if ((square & (WestWall | Rank7 | NorthWall)) == 0 && ((square << 15) & TeamPieces) == 0)
             {
-                moves = moves | (square << 15);
+                moves |= square << 15;
             }
             if ((square & (WestWall | SouthWall | Rank2)) == 0 && ((square >> 17) & TeamPieces) == 0)
             {
-                moves = moves | (square >> 17);
+                moves |= square >> 17;
             }
             if ((square & (WestWall | Rank2 | SouthWall)) == 0 && ((square >> 15) & TeamPieces) == 0)
             {
-                moves = moves | (square >> 15);
+                moves |= square >> 15;
             }
             if ((square & (WestWall | FileB | SouthWall)) == 0 && ((square >> 10) & TeamPieces) == 0)
             {
-                moves = moves | (square >> 10);
+                moves |= square >> 10;
             }
             if ((square & (SouthWall | EastWall | FileG)) == 0 && ((square >> 6) & TeamPieces) == 0)
             {
-                moves = moves | (square >> 6);
+                moves |= square >> 6;
             }
             return moves;
         }
@@ -534,18 +616,18 @@ namespace ChessEngine.Game
                 return 0xffffffffffffffff;
             }
             if ((square & NorthWall) == 0){
-                moves = moves | (square << 9) | (square << 8) | (square << 7);
+                moves |= (square << 9)| (square << 8) | (square << 7);
             }
             if ((square & EastWall) == 0){
             
-                moves = moves | (square << 1);
+                moves |= square << 1;
             
             }
             if ((square & SouthWall) == 0){
-                moves = moves | (square >> 9) | (square >> 8) | (square >> 7);
+                moves |= (square >> 9)| (square >> 8) | (square >> 7);
             }
             if ((square & WestWall) == 0){
-                moves = moves | (square >> 1);
+                moves |= square >> 1;
             }
             return moves ^ TeamPieces;
         }

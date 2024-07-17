@@ -12,8 +12,10 @@ namespace ChessEngine.Game
             window.Show();
         }
 
-        public void PrintBitBoard(ulong Board)
+        public void PrintBitBoard(ulong Board, string Bitboard)
         {
+            Console.WriteLine($"{Bitboard}: ");
+            Console.WriteLine("");
             for (int rank = 7; rank >= 0; rank--)
             {
                 for (int file = 0; file < 8; file++)
@@ -21,21 +23,6 @@ namespace ChessEngine.Game
                     int square = rank * 8 + file;
                     ulong mask = (ulong)1 << square;
                     Console.Write((Board & mask) != 0 ? "1 " : "0 ");
-                }
-                Console.WriteLine("");
-            }
-            Console.WriteLine("");
-        }
-
-        public void PrintBitBoardindex()
-        {
-            int count = 0;
-            for (int rank = 7; rank >= 0; rank--)
-            {
-                for (int file = 0; file < 8; file++)
-                {
-                    Console.Write(count+" ");
-                    count++;
                 }
                 Console.WriteLine("");
             }
@@ -65,14 +52,6 @@ namespace ChessEngine.Game
                 return true;
             }
             return false;
-        }
-
-        public void PrintBB(){
-            for(int i = 0;i<64;i++)
-            {
-                Console.WriteLine($"i was shifted by {i}");
-                PrintBitBoard(IntToBitboard(i));
-            }
         }
 
         public ulong IntToBitboard(int number){

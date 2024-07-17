@@ -13,8 +13,21 @@ namespace ChessEngine.WindowsUI
         private List<Button> Tiles = new List<Button>();
         Random random = new Random();
         ChessGame Board = new ChessGame();
+        Moves moves = new Moves();
         private Button? CurrentTile = null;
         private object? CurrentTileContent = null;
+
+        Dictionary<int, string> NumberToAlgebraicNotation = new Dictionary<int, string>
+        {
+            { 0, "h1" }, { 1, "g1" }, { 2, "f1" }, { 3, "e1" }, { 4, "d1" }, { 5, "c1" }, { 6, "b1" }, { 7, "a1" },
+            { 8, "h2" }, { 9, "g2" }, { 10, "f2" }, { 11, "e2" }, { 12, "d2" }, { 13, "c2" }, { 14, "b2" }, { 15, "a2" },
+            { 16, "h3" }, { 17, "g3" }, { 18, "f3" }, { 19, "e3" }, { 20, "d3" }, { 21, "c3" }, { 22, "b3" }, { 23, "a3" },
+            { 24, "h4" }, { 25, "g4" }, { 26, "f4" }, { 27, "e4" }, { 28, "d4" }, { 29, "c4" }, { 30, "b4" }, { 31, "a4" },
+            { 32, "h5" }, { 33, "g5" }, { 34, "f5" }, { 35, "e5" }, { 36, "d5" }, { 37, "c5" }, { 38, "b5" }, { 39, "a5" },
+            { 40, "h6" }, { 41, "g6" }, { 42, "f6" }, { 43, "e6" }, { 44, "d6" }, { 45, "c6" }, { 46, "b6" }, { 47, "a6" },
+            { 48, "h7" }, { 49, "g7" }, { 50, "f7" }, { 51, "e7" }, { 52, "d7" }, { 53, "c7" }, { 54, "b7" }, { 55, "a7" },
+            { 56, "h8" }, { 57, "g8" }, { 58, "f8" }, { 59, "e8" }, { 60, "d8" }, { 61, "c8" }, { 62, "b8" }, { 63, "a8" }
+        };
         
 
         public MainWindow()
@@ -27,8 +40,10 @@ namespace ChessEngine.WindowsUI
         {
             if (FenComboBox.SelectedItem is ComboBoxItem selectedItem)
             {
+                Moves.resetBitboards();
                 string fen = selectedItem.Tag.ToString();
                 SetupBoard(fen);
+                Moves.SortBitboards(FenTo64(fen));
             }
         }
 
@@ -74,7 +89,6 @@ namespace ChessEngine.WindowsUI
 
         private void Tile_Click(object sender, RoutedEventArgs e)
         {
-            var watch = System.Diagnostics.Stopwatch.StartNew();
             Button ClickedTile = (Button)sender;
             if (CurrentTile == null && ClickedTile.Content != null)
             {
@@ -85,6 +99,7 @@ namespace ChessEngine.WindowsUI
             }
             else if (CurrentTile != null)
             {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
                 if (ClickedTile == CurrentTile)
                 {
                     CurrentTile.BorderThickness = new Thickness(0);
@@ -93,16 +108,16 @@ namespace ChessEngine.WindowsUI
                 }
                 else if(Board.CanMove(Convert.ToInt32(CurrentTile.Tag), Convert.ToInt32(ClickedTile.Tag)))
                 {
+                    Console.WriteLine($"Move: {NumberToAlgebraicNotation[Convert.ToInt32(CurrentTile.Tag)]}:{NumberToAlgebraicNotation[Convert.ToInt32(ClickedTile.Tag)]}");
                     ClickedTile.Content = CurrentTileContent;
                     CurrentTile.Content = null;
                     CurrentTile.BorderThickness = new Thickness(0);
                     CurrentTile = null;
                     CurrentTileContent = null;
                 }
-                
+                watch.Stop();
+                Console.WriteLine($"Time Taken to check move: {watch.ElapsedMilliseconds}ms");
             }
-            watch.Stop();
-            Console.WriteLine("Time Taken to find check move: " + watch.ElapsedMilliseconds + "ms");
         }
 
         public ulong NumberToBitBoard(int number)
