@@ -13,22 +13,22 @@ namespace ChessEngine.Game
         public static ChessGame Board = new ChessGame();
 
         public static ulong WhitePawns,BlackPawns,WhiteBishops,BlackBishops,WhiteKnights,BlackKnights,WhiteRooks,BlackRooks,WhiteKing,BlackKing,WhiteQueen,BlackQueen;
-        public static ulong SouthWall =  0x00000000000000FF;
-        public static ulong NorthWall =  0xFF00000000000000;
-        public static ulong EastWall =   0x8080808080808080;
-        public static ulong WestWall =   0x0101010101010101;
-        public static ulong Rank7 =      0x00FF000000000000;
-        public static ulong Rank6 =      0x0000FF0000000000;
-        public static ulong Rank5 =      0x000000FF00000000;
-        public static ulong Rank4 =      0x00000000FF000000;
-        public static ulong Rank3 =      0x0000000000FF0000;
-        public static ulong Rank2 =      0x000000000000FF00;
-        public static ulong FileB =      0x0202020202020202;
-        public static ulong FileC =      0x0404040404040404;
-        public static ulong FileD =      0x0808080808080808;
-        public static ulong FileE =      0x1010101010101010;
-        public static ulong FileF =      0x2020202020202020;
-        public static ulong FileG =      0x4040404040404040;
+        public static ulong Rank8 = 0xFF00000000000000;
+        public static ulong Rank7 = 0x00FF000000000000;
+        public static ulong Rank6 = 0x0000FF0000000000;
+        public static ulong Rank5 = 0x000000FF00000000;
+        public static ulong Rank4 = 0x00000000FF000000;
+        public static ulong Rank3 = 0x0000000000FF0000;
+        public static ulong Rank2 = 0x000000000000FF00;
+        public static ulong Rank1 = 0x00000000000000FF;
+        public static ulong FileA = 0x0101010101010101;
+        public static ulong FileB = 0x0202020202020202;
+        public static ulong FileC = 0x0404040404040404;
+        public static ulong FileD = 0x0808080808080808;
+        public static ulong FileE = 0x1010101010101010;
+        public static ulong FileF = 0x2020202020202020;
+        public static ulong FileG = 0x4040404040404040;
+        public static ulong FileH = 0x8080808080808080;
         
         public static void SortBitboards(string fen)
         {
@@ -140,28 +140,38 @@ namespace ChessEngine.Game
             return GetBlackPieces() | GetWhitePieces();
         }
 
-        public static Tuple<ulong, bool> SortMove(ulong square, bool CheckAttack)
+        public static ulong SortMove(ulong square, bool WhiteTurn, ulong Move, bool WhiteKingCheck, bool BlackKingCheck)
         {
-            if ((square & GetWhitePieces()) != 0 )
+            ulong moves = 0UL;
+            if ((square & GetWhitePieces()) != 0 && WhiteTurn)
             {
-                if((square & WhiteKing) != 0) return Tuple.Create(GenerateKingMoves(square, true, CheckAttack),true);
-                if((square & WhitePawns) != 0) return Tuple.Create(GeneratePawnMoves(square, true, false),false);
-                if((square & WhiteRooks) != 0) return Tuple.Create(GenerateRookMoves(square, true),false);
-                if((square & WhiteKnights) != 0) return Tuple.Create(GenerateKnightMoves(square, true),false);
-                if((square & WhiteBishops) != 0) return Tuple.Create(GenerateBishopMoves(square, true),false);
-                if((square & WhiteQueen) != 0) return Tuple.Create(GenerateQueenMoves(square, true),false);
-                return Tuple.Create(0UL,false);
+                if((square & WhiteKing) != 0) moves = GenerateKingMoves(square, true, Move, true);
+                if((square & WhitePawns) != 0) moves = GeneratePawnMoves(square, true, false);
+                if((square & WhiteRooks) != 0) moves = GenerateRookMoves(square, true);
+                if((square & WhiteKnights) != 0) moves = GenerateKnightMoves(square, true);
+                if((square & WhiteBishops) != 0) moves = GenerateBishopMoves(square, true);
+                if((square & WhiteQueen) != 0) moves = GenerateQueenMoves(square, true);
+                if(WhiteKingCheck == true)
+                {;
+                    moves = moves & GetCheckMask(WhiteKing,true);
+                }
+                return moves;
             }
-            else
+            else if(!WhiteTurn)
             {
-                if((square & BlackKing) != 0) return Tuple.Create(GenerateKingMoves(square, false, CheckAttack),true);
-                if((square & BlackPawns) != 0) return Tuple.Create(GeneratePawnMoves(square, false, false),false);
-                if((square & BlackRooks) != 0) return Tuple.Create(GenerateRookMoves(square, false),false);
-                if((square & BlackKnights) != 0) return Tuple.Create(GenerateKnightMoves(square, false),false);
-                if((square & BlackBishops) != 0) return Tuple.Create(GenerateBishopMoves(square, false),false);
-                if((square & BlackQueen) != 0) return Tuple.Create(GenerateQueenMoves(square, false),false);
-                return Tuple.Create(0UL,false);
+                if((square & BlackKing) != 0) moves = GenerateKingMoves(square, false, Move, true);
+                if((square & BlackPawns) != 0) moves = GeneratePawnMoves(square, false, false);
+                if((square & BlackRooks) != 0) moves = GenerateRookMoves(square, false);
+                if((square & BlackKnights) != 0) moves = GenerateKnightMoves(square, false);
+                if((square & BlackBishops) != 0) moves = GenerateBishopMoves(square, false);
+                if((square & BlackQueen) != 0) moves = GenerateQueenMoves(square, false);
+                if(BlackKingCheck == true)
+                {
+                    moves = moves & GetCheckMask(BlackKing,false);
+                }
+                return moves;
             }
+            return moves;
         }
 
         public static void UpdateBitboard(ulong From, ulong To)
@@ -217,18 +227,18 @@ namespace ChessEngine.Game
                 moves |= SinglePawnPush;
             }
             ulong DoublePawnPush = isWhite ? square << 16 : square >> 16;
-            if (((SinglePawnPush | DoublePawnPush) & GetAllPieces()) == 0 && (isWhite ? (square & 0x000000000000FF00UL) != 0 : (square & 0x00FF000000000000UL) != 0))
+            if (((SinglePawnPush | DoublePawnPush) & GetAllPieces()) == 0 && (isWhite ? (square & Rank2) != 0 : (square & Rank7) != 0))
             {
                 moves |= DoublePawnPush;
             }
 
-            ulong LeftTake = isWhite ? square << 9 : square >> 7;
-            if ((LeftTake & (isWhite ? GetBlackPieces() : GetWhitePieces())) != 0 && (square & 0x8080808080808080UL) == 0)
+            ulong LeftTake = isWhite ? square << 7 : square >> 9;
+            if ((LeftTake & (isWhite ? GetBlackPieces() : GetWhitePieces())) != 0 && (square & FileA) == 0)
             {
                 moves |= LeftTake;
             }
-            ulong RightTake = isWhite ? square << 7 : square >> 9;
-            if ((RightTake & (isWhite ? GetBlackPieces() : GetWhitePieces())) != 0 && (square & 0x0101010101010101UL) == 0)
+            ulong RightTake = isWhite ? square << 9 : square >> 7;
+            if ((RightTake & (isWhite ? GetBlackPieces() : GetWhitePieces())) != 0 && (square & FileH) == 0)
             {
                 moves |= RightTake;
             }
@@ -247,7 +257,7 @@ namespace ChessEngine.Game
         {
             ulong moves = 0;
             (ulong OpposingPieces, ulong TeamPieces) = IsWhite ? (GetBlackPieces(), GetWhitePieces()) : (GetWhitePieces(), GetBlackPieces());
-            if ((square & NorthWall) != 0)
+            if ((square & Rank8) != 0)
             {
                 return moves;
             }
@@ -256,7 +266,7 @@ namespace ChessEngine.Game
             {
                 if ((North & TeamPieces) == 0)
                 {
-                    if ((North & OpposingPieces) != 0 || (North & NorthWall) != 0)
+                    if ((North & OpposingPieces) != 0 || (North & Rank8) != 0)
                     {
                         moves |= North;
                         return moves;
@@ -278,7 +288,7 @@ namespace ChessEngine.Game
         {
             ulong moves = 0;
             (ulong OpposingPieces, ulong TeamPieces) = IsWhite ? (GetBlackPieces(), GetWhitePieces()) : (GetWhitePieces(), GetBlackPieces());
-            if ((square & EastWall) != 0)
+            if ((square & FileH) != 0)
             {
                 return moves;
             }
@@ -287,7 +297,7 @@ namespace ChessEngine.Game
             {
                 if ((East & TeamPieces) == 0)
                 {
-                    if ((East & OpposingPieces) != 0 || (East & EastWall) != 0)
+                    if ((East & OpposingPieces) != 0 || (East & FileH) != 0)
                     {
                         moves |= East;
                         return moves;
@@ -309,7 +319,7 @@ namespace ChessEngine.Game
         {
             ulong moves = 0;
             (ulong OpposingPieces, ulong TeamPieces) = IsWhite ? (GetBlackPieces(), GetWhitePieces()) : (GetWhitePieces(), GetBlackPieces());
-            if ((square & WestWall) != 0)
+            if ((square & FileA) != 0)
             {
                 return moves;
             }
@@ -318,7 +328,7 @@ namespace ChessEngine.Game
             {
                 if ((West & TeamPieces) == 0)
                 {
-                    if ((West & OpposingPieces) != 0 || (West & WestWall) != 0)
+                    if ((West & OpposingPieces) != 0 || (West & FileA) != 0)
                     {
                         moves |= West;
                         return moves;
@@ -340,7 +350,7 @@ namespace ChessEngine.Game
         {
             ulong moves = 0;
             (ulong OpposingPieces, ulong TeamPieces) = IsWhite ? (GetBlackPieces(), GetWhitePieces()) : (GetWhitePieces(), GetBlackPieces());
-            if ((square & SouthWall) != 0)
+            if ((square & Rank1) != 0)
             {
                 return moves;
             }
@@ -349,7 +359,7 @@ namespace ChessEngine.Game
             {
                 if ((South & TeamPieces) == 0)
                 {
-                    if ((South & OpposingPieces) != 0 || (South & SouthWall) != 0)
+                    if ((South & OpposingPieces) != 0 || (South & Rank1) != 0)
                     {
                         moves |= South;
                         return moves;
@@ -371,7 +381,7 @@ namespace ChessEngine.Game
         {
             ulong moves = 0;
             (ulong OpposingPieces, ulong TeamPieces) = IsWhite ? (GetBlackPieces(), GetWhitePieces()) : (GetWhitePieces(), GetBlackPieces());
-            if ((square & (NorthWall | WestWall)) != 0)
+            if ((square &  (Rank8 | FileA)) != 0)
             {
                 return moves;
             }
@@ -380,7 +390,7 @@ namespace ChessEngine.Game
             {
                 if ((NorthWest & TeamPieces) == 0)
                 {
-                    if ((NorthWest & OpposingPieces) != 0 || (NorthWest & (NorthWall | WestWall)) != 0)
+                    if ((NorthWest & OpposingPieces) != 0 || (NorthWest &  (Rank8 | FileA)) != 0)
                     {
                         moves |= NorthWest;
                         return moves;
@@ -403,7 +413,7 @@ namespace ChessEngine.Game
         {
             ulong moves = 0;
             (ulong OpposingPieces, ulong TeamPieces) = IsWhite ? (GetBlackPieces(), GetWhitePieces()) : (GetWhitePieces(), GetBlackPieces());
-            if ((square & (NorthWall | EastWall)) != 0)
+            if ((square &  (Rank8 | FileH)) != 0)
             {
                 return moves;
             }
@@ -412,7 +422,7 @@ namespace ChessEngine.Game
             {
                 if ((NorthEast & TeamPieces) == 0)
                 {
-                    if ((NorthEast & OpposingPieces) != 0 || (NorthEast & (NorthWall | EastWall)) != 0)
+                    if ((NorthEast & OpposingPieces) != 0 || (NorthEast &  (Rank8 | FileH)) != 0)
                     {
                         moves |= NorthEast;
                         return moves;
@@ -435,7 +445,7 @@ namespace ChessEngine.Game
         {
             ulong moves = 0;
             (ulong OpposingPieces, ulong TeamPieces) = IsWhite ? (GetBlackPieces(), GetWhitePieces()) : (GetWhitePieces(), GetBlackPieces());
-            if ((square & (SouthWall | WestWall)) != 0)
+            if ((square & (Rank1 | FileA)) != 0)
             {
                 return moves;
             }
@@ -444,7 +454,7 @@ namespace ChessEngine.Game
             {
                 if ((SouthWest & TeamPieces) == 0)
                 {
-                    if ((SouthWest & OpposingPieces) != 0 || (SouthWest & (SouthWall | WestWall)) != 0)
+                    if ((SouthWest & OpposingPieces) != 0 || (SouthWest & (Rank1 | FileA)) != 0)
                     {
                         moves |= SouthWest;
                         return moves;
@@ -467,7 +477,7 @@ namespace ChessEngine.Game
         {
             ulong moves = 0;
             (ulong OpposingPieces, ulong TeamPieces) = IsWhite ? (GetBlackPieces(), GetWhitePieces()) : (GetWhitePieces(), GetBlackPieces());
-            if ((square & (SouthWall | EastWall)) != 0)
+            if ((square & (Rank1 | FileH)) != 0)
             {
                 return moves;
             }
@@ -476,7 +486,7 @@ namespace ChessEngine.Game
             {
                 if ((SouthEast & TeamPieces) == 0)
                 {
-                    if ((SouthEast & OpposingPieces) != 0 || (SouthEast & (SouthWall | EastWall)) != 0)
+                    if ((SouthEast & OpposingPieces) != 0 || (SouthEast & (Rank1 | FileH)) != 0)
                     {
                         moves |= SouthEast;
                         return moves;
@@ -526,35 +536,35 @@ namespace ChessEngine.Game
         public static ulong GenerateKnightMoves(ulong square, bool IsWhite){
             ulong moves = 0;
             ulong TeamPieces = IsWhite ? GetWhitePieces() : GetBlackPieces();
-            if ((square & (EastWall | Rank7 | NorthWall)) == 0 && ((square << 17) & TeamPieces) == 0)
+            if ((square & (FileH | Rank7 | Rank8)) == 0 && ((square << 17) & TeamPieces) == 0)
             {
                 moves |= square << 17;
             }
-            if ((square & (EastWall | NorthWall | FileG)) == 0 && ((square << 10) & TeamPieces) == 0)
+            if ((square & (FileH | Rank8 | FileG)) == 0 && ((square << 10) & TeamPieces) == 0)
             {
                 moves |= square << 10;
             }
-            if ((square & (WestWall | NorthWall | FileB)) == 0 && ((square << 6) & TeamPieces) == 0)
+            if ((square & (FileA | Rank8 | FileB)) == 0 && ((square << 6) & TeamPieces) == 0)
             {
                 moves |= square << 6;
             }
-            if ((square & (WestWall | Rank7 | NorthWall)) == 0 && ((square << 15) & TeamPieces) == 0)
+            if ((square & (FileA | Rank7 | Rank8)) == 0 && ((square << 15) & TeamPieces) == 0)
             {
                 moves |= square << 15;
             }
-            if ((square & (WestWall | SouthWall | Rank2)) == 0 && ((square >> 17) & TeamPieces) == 0)
+            if ((square & (FileA | Rank1 | Rank2)) == 0 && ((square >> 17) & TeamPieces) == 0)
             {
                 moves |= square >> 17;
             }
-            if ((square & (WestWall | Rank2 | SouthWall)) == 0 && ((square >> 15) & TeamPieces) == 0)
+            if ((square & (FileA | Rank2 | Rank1)) == 0 && ((square >> 15) & TeamPieces) == 0)
             {
                 moves |= square >> 15;
             }
-            if ((square & (WestWall | FileB | SouthWall)) == 0 && ((square >> 10) & TeamPieces) == 0)
+            if ((square & (FileA | FileB | Rank1)) == 0 && ((square >> 10) & TeamPieces) == 0)
             {
                 moves |= square >> 10;
             }
-            if ((square & (SouthWall | EastWall | FileG)) == 0 && ((square >> 6) & TeamPieces) == 0)
+            if ((square & (Rank1 | FileH | FileG)) == 0 && ((square >> 6) & TeamPieces) == 0)
             {
                 moves |= square >> 6;
             }
@@ -595,7 +605,7 @@ namespace ChessEngine.Game
                 return true;
             }
 
-            ulong KingMoves = GenerateKingMoves(square, IsWhite, false);
+            ulong KingMoves = GenerateKingMoves(square, IsWhite, 0UL, false);
             if ( IsWhite ? (KingMoves & BlackKing) != 0 : (PawnMoves & WhiteKing) != 0)
             {
                 return true;
@@ -604,32 +614,78 @@ namespace ChessEngine.Game
             return false;
         }
 
-        public static ulong GenerateKingMoves(ulong square, bool IsWhite, bool CheckAttack){
+        public static ulong GenerateKingMoves(ulong square, bool IsWhite, ulong Move, bool CheckAttack){
             ulong moves = 0;
             ulong TeamPieces = IsWhite ? GetWhitePieces() : GetBlackPieces();
             if(CheckAttack)
             {
-                if(IsAttacked(square,IsWhite))
+                if(IsAttacked(Move,IsWhite))
                 {
                     return 0;
                 }
-                return 0xffffffffffffffff;
             }
-            if ((square & NorthWall) == 0){
-                moves |= (square << 9)| (square << 8) | (square << 7);
+            if ((square & Rank8) == 0){
+                moves |= (square << 9) | (square << 8) | (square << 7);
             }
-            if ((square & EastWall) == 0){
+            if ((square & FileH) == 0){
             
                 moves |= square << 1;
             
             }
-            if ((square & SouthWall) == 0){
-                moves |= (square >> 9)| (square >> 8) | (square >> 7);
+            if ((square & Rank1) == 0){
+                moves |= (square >> 9) | (square >> 8) | (square >> 7);
             }
-            if ((square & WestWall) == 0){
+            if ((square & FileA) == 0){
                 moves |= square >> 1;
             }
-            return moves ^ TeamPieces;
+            return moves & ~TeamPieces;
+        }
+
+        public static ulong GetCheckMask(ulong square, bool IsWhite)
+        {
+            ulong CheckMask = 0UL;
+
+            ulong NorthMoves = NorthFill(square, IsWhite);
+            ulong EastMoves = EastFill(square, IsWhite);
+            ulong WestMoves = WestFill(square, IsWhite);
+            ulong SouthMoves = SouthFill(square, IsWhite);
+            ulong NorthWestMoves = NorthWestFill(square, IsWhite);
+            ulong NorthEastMoves = NorthEastFill(square, IsWhite);
+            ulong SouthWestMoves = SouthWestFill(square, IsWhite);
+            ulong SouthEastMoves = SouthEastFill(square, IsWhite); 
+
+            ulong Dpieces = IsWhite? BlackQueen | BlackBishops : WhiteBishops | WhiteQueen;
+            ulong HVpieces = IsWhite? BlackQueen | BlackRooks : WhiteQueen | WhiteRooks;
+
+            if((NorthMoves & HVpieces) != 0) CheckMask |= NorthMoves;
+            if((EastMoves & HVpieces) != 0) CheckMask |= EastMoves;
+            if((WestMoves & HVpieces) != 0) CheckMask |= WestMoves;
+            if((SouthMoves & HVpieces) != 0) CheckMask |= SouthMoves; 
+
+            if((NorthWestMoves & Dpieces) != 0) CheckMask |= NorthWestMoves;
+            if((NorthEastMoves & Dpieces) != 0) CheckMask |= NorthEastMoves;
+            if((SouthWestMoves & Dpieces) != 0) CheckMask |= SouthWestMoves;
+            if((SouthEastMoves & Dpieces) != 0) CheckMask |= SouthEastMoves;
+
+            ulong Knight = IsWhite? BlackKnights : WhiteKnights;
+
+            if ((square & (FileH | Rank7 | Rank8)) == 0 && ((square << 17) & Knight) != 0){CheckMask |= square << 17;}
+            if ((square & (FileH | Rank8 | FileG)) == 0 && ((square << 10) & Knight) != 0){CheckMask |= square << 10;}
+            if ((square & (FileA | Rank8 | FileB)) == 0 && ((square << 6) & Knight) != 0){CheckMask |= square << 6;}
+            if ((square & (FileA | Rank7 | Rank8)) == 0 && ((square << 15) & Knight) != 0){CheckMask |= square << 15;}
+            if ((square & (FileA | Rank1 | Rank2)) == 0 && ((square >> 17) & Knight) != 0){CheckMask |= square >> 17;}
+            if ((square & (FileA | Rank2 | Rank1)) == 0 && ((square >> 15) & Knight) != 0){CheckMask |= square >> 15;}
+            if ((square & (FileA | FileB | Rank1)) == 0 && ((square >> 10) & Knight) != 0){CheckMask |= square >> 10;}
+            if ((square & (Rank1 | FileH | FileG)) == 0 && ((square >> 6) & Knight) != 0){CheckMask |= square >> 6;}
+
+            ulong Pawn = IsWhite? BlackPawns : WhitePawns;
+
+            ulong LeftTake = IsWhite ? square << 9 : square >> 7;
+            if ((LeftTake & Pawn) != 0 && (square & FileA) == 0){CheckMask |= LeftTake;}
+            ulong RightTake = IsWhite ? square << 7 : square >> 9;
+            if ((RightTake & Pawn) != 0 && (square & FileH) == 0){CheckMask |= RightTake;}
+
+            return CheckMask;
         }
     }
 }

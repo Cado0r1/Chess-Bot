@@ -114,6 +114,7 @@ namespace ChessEngine.WindowsUI
                     CurrentTile.BorderThickness = new Thickness(0);
                     CurrentTile = null;
                     CurrentTileContent = null;
+                    Board.IncrementTurn();
                 }
                 watch.Stop();
                 Console.WriteLine($"Time Taken to check move: {watch.ElapsedMilliseconds}ms");

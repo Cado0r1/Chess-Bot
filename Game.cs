@@ -6,10 +6,23 @@ namespace ChessEngine.Game
     public class ChessGame
     {
         Moves MoveGen = new Moves();
+        public static int turn = 1;
+        public bool WhiteKingCheck = false;
+        public bool BlackKingCheck = false;
+
         public void RunMainWindow()
         {
             MainWindow window = new MainWindow();
             window.Show();
+        }
+
+        public static bool Turn()
+        {
+            if(turn%2 == 0)
+            {
+                return false;
+            }
+            return true;
         }
 
         public void PrintBitBoard(ulong Board, string Bitboard)
@@ -33,25 +46,21 @@ namespace ChessEngine.Game
         {   
             From = IndexFlipper(From);
             To = IndexFlipper(To);
-            Tuple<ulong,bool> Move = Moves.SortMove(IntToBitboard(From), false);
-            if(Move.Item2 == true)
-            {
-               if((Move.Item1 & IntToBitboard(To)) != 0)
-                {
-                    Moves.UpdateBitboard(IntToBitboard(From), IntToBitboard(To));
-                    if(Moves.SortMove(IntToBitboard(To), true).Item1 == 0){
-                        Moves.UpdateBitboard(IntToBitboard(To), IntToBitboard(From));
-                        return false;
-                    }
-                    return true;
-                } 
-            }
-            if((Move.Item1 & IntToBitboard(To)) != 0)
+            ulong Move = Moves.SortMove(IntToBitboard(From), Turn(), IntToBitboard(To),WhiteKingCheck,BlackKingCheck);
+            if((Move & IntToBitboard(To)) != 0)
             {
                 Moves.UpdateBitboard(IntToBitboard(From), IntToBitboard(To));
                 return true;
             }
             return false;
+        }
+
+        public void IncrementTurn()
+        {
+            WhiteKingCheck = Moves.IsAttacked(Moves.WhiteKing,true) ? true : false; 
+            BlackKingCheck = Moves.IsAttacked(Moves.BlackKing,false) ? true : false;
+            Console.WriteLine($"WhiteKingCheck:{WhiteKingCheck}    BlackKingCheck:{BlackKingCheck}");
+            turn++;
         }
 
         public ulong IntToBitboard(int number){
