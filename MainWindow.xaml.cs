@@ -1,8 +1,14 @@
 ﻿using System.Windows;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Windows.Media;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using ChessEngine.Game;
+using static ChessEngine.Game.ChessGame;
+using static ChessEngine.Game.FenService;
+using static ChessEngine.Game.Moves;
+using static ChessEngine.Game.BitboardOperations;
 
 
 namespace ChessEngine.WindowsUI
@@ -10,10 +16,9 @@ namespace ChessEngine.WindowsUI
     public partial class MainWindow : Window
     {
 
+
         private List<Button> Tiles = new List<Button>();
         Random random = new Random();
-        ChessGame Board = new ChessGame();
-        Moves moves = new Moves();
         private Button? CurrentTile = null;
         private object? CurrentTileContent = null;
 
@@ -28,7 +33,7 @@ namespace ChessEngine.WindowsUI
             { 48, "h7" }, { 49, "g7" }, { 50, "f7" }, { 51, "e7" }, { 52, "d7" }, { 53, "c7" }, { 54, "b7" }, { 55, "a7" },
             { 56, "h8" }, { 57, "g8" }, { 58, "f8" }, { 59, "e8" }, { 60, "d8" }, { 61, "c8" }, { 62, "b8" }, { 63, "a8" }
         };
-        
+
 
         public MainWindow()
         {
@@ -40,10 +45,10 @@ namespace ChessEngine.WindowsUI
         {
             if (FenComboBox.SelectedItem is ComboBoxItem selectedItem)
             {
-                Moves.resetBitboards();
+                resetBitboards();
                 string fen = selectedItem.Tag.ToString();
                 SetupBoard(fen);
-                Moves.SortBitboards(FenTo64(fen));
+                SortBitboards(FenTo64(fen));
             }
         }
 
@@ -106,7 +111,7 @@ namespace ChessEngine.WindowsUI
                     CurrentTile = null;
                     CurrentTileContent = null;
                 }
-                else if(Board.CanMove(Convert.ToInt32(CurrentTile.Tag), Convert.ToInt32(ClickedTile.Tag)))
+                else if(CanMove(Convert.ToInt32(CurrentTile.Tag), Convert.ToInt32(ClickedTile.Tag)))
                 {
                     Console.WriteLine($"Move: {NumberToAlgebraicNotation[Convert.ToInt32(CurrentTile.Tag)]}:{NumberToAlgebraicNotation[Convert.ToInt32(ClickedTile.Tag)]}");
                     ClickedTile.Content = CurrentTileContent;
@@ -114,22 +119,12 @@ namespace ChessEngine.WindowsUI
                     CurrentTile.BorderThickness = new Thickness(0);
                     CurrentTile = null;
                     CurrentTileContent = null;
-                    Board.IncrementTurn();
+                    IncrementTurn();
                 }
                 watch.Stop();
                 Console.WriteLine($"Time Taken to check move: {watch.ElapsedMilliseconds}ms");
             }
         }
-
-        public ulong NumberToBitBoard(int number)
-        {
-            ulong BitBoard = 0;
-            ulong MaskedBitBoard = (ulong)1 << number;
-            BitBoard |= MaskedBitBoard;
-            return BitBoard;
-        }
-
-
 
         private Color GetRandomColor()
         {
@@ -166,60 +161,5 @@ namespace ChessEngine.WindowsUI
                 }
             }
         }
-
-
-        private string FenReader(int index, string Fen)
-        {
-            char piece;
-            if (char.IsLetter(Fen[index])){
-                piece = Fen[index];
-            }
-            else{
-                return 1.ToString();
-            }
-            string basePath = "C:/users/olive/Documents/ChessEngine/images/";
-            return piece switch
-            {
-                'r' => basePath + "Chess_rdt60.png",
-                'n' => basePath + "Chess_ndt60.png",
-                'b' => basePath + "Chess_bdt60.png",
-                'q' => basePath + "Chess_qdt60.png",
-                'k' => basePath + "Chess_kdt60.png",
-                'p' => basePath + "Chess_pdt60.png",
-                'R' => basePath + "Chess_rlt60.png",
-                'N' => basePath + "Chess_nlt60.png",
-                'B' => basePath + "Chess_blt60.png",
-                'Q' => basePath + "Chess_qlt60.png",
-                'K' => basePath + "Chess_klt60.png",
-                'P' => basePath + "Chess_plt60.png",
-                _ => throw new ArgumentException("Invalid piece type"),
-            };
-        }
-
-        private static string FenTo64(string fen)
-        {
-            string newFen = "";
-            for (int i = 0; i < fen.Length; i++)
-            {
-                if (char.IsNumber(fen[i]))
-                {
-                    int emptySquares = int.Parse(fen[i].ToString());
-                    for (int j = 0; j < emptySquares; j++)
-                    {
-                        newFen += '1'; 
-                    }
-                }
-                else if (fen[i] == '/')
-                {
-                    continue;
-                }
-                else
-                {
-                    newFen += fen[i];
-                }
-            }
-            return newFen;
-        }
-
     }
 }

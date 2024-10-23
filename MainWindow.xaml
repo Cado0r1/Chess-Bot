@@ -14,6 +14,7 @@
                 <ComboBoxItem Content="Standard Position" Tag="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"/>
                 <ComboBoxItem Content="Scillian Defence" Tag="rnbqkbnr/pp2pppp/3p4/8/3pP3/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 4"/>
                 <ComboBoxItem Content="Caro-Kann Defence" Tag="rnbqkbnr/pp2pppp/2p5/8/3Pp3/2N5/PPP2PPP/R1BQKBNR w KQkq - 0 4"/>
+                <ComboBoxItem Content="Pin" Tag="4kbnr/1p3p2/2N2B2/1B6/8/8/8/K7 w KQkq - 0 4"/>
             </ComboBox>
         </StackPanel>
         

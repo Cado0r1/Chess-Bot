@@ -1,14 +1,20 @@
 using System;
+using System.Windows;
+using System.Collections.Generic;
 using ChessEngine.WindowsUI;
+using static ChessEngine.Game.Moves;
+using static ChessEngine.Game.FenService;
+using static ChessEngine.Game.BitboardOperations;
 
 namespace ChessEngine.Game
 {
     public class ChessGame
     {
-        Moves MoveGen = new Moves();
         public static int turn = 1;
-        public bool WhiteKingCheck = false;
-        public bool BlackKingCheck = false;
+        public static bool WhiteKingCheck = false;
+        public static bool BlackKingCheck = false;
+        public static ulong[] Positions = new ulong[12];
+        public static List<Gamestate> Movelist = new List<Gamestate>();
 
         public void RunMainWindow()
         {
@@ -18,67 +24,73 @@ namespace ChessEngine.Game
 
         public static bool Turn()
         {
-            if(turn%2 == 0)
-            {
-                return false;
-            }
-            return true;
+            return turn % 2 != 0;
         }
 
-        public void PrintBitBoard(ulong Board, string Bitboard)
-        {
-            Console.WriteLine($"{Bitboard}: ");
-            Console.WriteLine("");
-            for (int rank = 7; rank >= 0; rank--)
-            {
-                for (int file = 0; file < 8; file++)
-                {
-                    int square = rank * 8 + file;
-                    ulong mask = (ulong)1 << square;
-                    Console.Write((Board & mask) != 0 ? "1 " : "0 ");
-                }
-                Console.WriteLine("");
-            }
-            Console.WriteLine("");
-        }
-    
-        public bool CanMove(int From, int To)
+        public static bool CanMove(int from, int to)
         {   
-            From = IndexFlipper(From);
-            To = IndexFlipper(To);
-            ulong Move = Moves.SortMove(IntToBitboard(From), Turn(), IntToBitboard(To),WhiteKingCheck,BlackKingCheck);
-            if((Move & IntToBitboard(To)) != 0)
+            from = IndexFlipper(from);
+            to = IndexFlipper(to);
+            ulong move = SortMove(IntToBitboard(from), Turn(), IntToBitboard(to), WhiteKingCheck, BlackKingCheck);
+            if ((move & IntToBitboard(to)) != 0)
             {
-                Moves.UpdateBitboard(IntToBitboard(From), IntToBitboard(To));
+                UpdateBitboard(IntToBitboard(from), IntToBitboard(to));
                 return true;
             }
             return false;
         }
 
-        public void IncrementTurn()
+        public static void IncrementTurn()
         {
-            WhiteKingCheck = Moves.IsAttacked(Moves.WhiteKing,true) ? true : false; 
-            BlackKingCheck = Moves.IsAttacked(Moves.BlackKing,false) ? true : false;
-            Console.WriteLine($"WhiteKingCheck:{WhiteKingCheck}    BlackKingCheck:{BlackKingCheck}");
+            IsCheckmate();
+            Console.WriteLine(IsCheckmate());
+            SetPositions();
             turn++;
         }
 
-        public ulong IntToBitboard(int number){
-            return (ulong)1 << number;
+        public static bool IsCheckmate()
+        {
+            WhiteKingCheck = IsAttacked(WhiteKing, true);
+            Console.WriteLine(WhiteKingCheck = IsAttacked(WhiteKing, true));
+            BlackKingCheck = IsAttacked(BlackKing, false);
+            Console.WriteLine(BlackKingCheck = IsAttacked(BlackKing, false));
+            if (WhiteKingCheck || BlackKingCheck)
+            {
+                ulong checkMask = WhiteKingCheck? GetCheckMask(WhiteKing, WhiteKingCheck) : GetCheckMask(BlackKing,WhiteKingCheck);
+                PrintBitBoard(checkMask,"checkMask");
+                Console.WriteLine(GetCheckPiece(checkMask,WhiteKingCheck));
+                Console.WriteLine(GetCheckPiece(checkMask,!WhiteKingCheck));
+                if (!IsAttacked(GetCheckPiece(checkMask,WhiteKingCheck),!WhiteKingCheck,false,true))
+                {
+                    if (!IsAttacked(checkMask, !WhiteKingCheck, false, false))
+                    {   
+                        if (IsAttacked(GenerateKingMoves(WhiteKingCheck ? WhiteKing : BlackKing, WhiteKingCheck, 0UL, false), WhiteKingCheck))
+                        {
+                            Console.WriteLine("");
+                            Console.WriteLine("Checkmate");
+                            Console.WriteLine($"Game ended in {turn} turns");
+                            string won = WhiteKingCheck ? "Black" : "White";
+                            Console.WriteLine($"{won} Won");
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
+    }
 
-        public int IndexFlipper(int index){
-            Dictionary<int, int> Offset = new Dictionary<int, int>();
-            Offset[7] = -7;
-            Offset[6] = -5;
-            Offset[5] = -3;
-            Offset[4] = -1;
-            Offset[3] = 1;
-            Offset[2] = 3;
-            Offset[1] = 5;
-            Offset[0] = 7;
+    public class Gamestate
+    {
+        public int TurnNum { get; private set; }
+        public ulong[] PiecesPositions { get; private set; }
+        public string MoveMade { get; private set; }
 
-            return index + Offset[index%8];
+        public Gamestate(int turnNum, ulong[] piecesPositions, string moveMade)
+        {
+            TurnNum = turnNum;
+            PiecesPositions = (ulong[])piecesPositions.Clone();
+            MoveMade = moveMade;
         }
     }
 }
